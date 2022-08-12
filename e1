@@ -41,9 +41,8 @@ t_c = data
 
 class e2(object):
     def update_statusbar(message):
-        
-        statusbar.push(context_id, message)
 
+        statusbar.push(context_id, message)
 
     def periodic(self):  # fetch status items and update screen
         self.s.poll()
@@ -63,28 +62,27 @@ class e2(object):
 
         # print("\n periodic fuction")
         # poll the status channel
-        
-        
+
         self.error_status = self.ec.poll()
         error_kind = ''
         error_text = ''
         if self.error_status:
-          error_kind = self.error_status
-          error_text = self.error_status
+            error_kind = self.error_status
+            error_text = self.error_status
         if error_kind in (self.cnc.NML_ERROR, self.cnc.OPERATOR_ERROR):
-           error_type = "Error "
+            error_type = "Error "
         else:
-           error_type = "Info "
+            error_type = "Info "
 
         error_text2 = ''
         for item in error_text:
-          error_text2 = error_text2 + str(item)
-        #self.response1.set_property("text", error_type+ "  " +error_text2)   
+            error_text2 = error_text2 + str(item)
+        #self.response1.set_property("text", error_type+ "  " +error_text2)
         #self.response1 = self.messagedialog2.run()
-        #self.messagedialog.hide()
+        # self.messagedialog.hide()
 
-#       
-       # Head image change
+#
+         # Head image change
         self.imagechange(rflag, lflag)
         self.time.set_text(time.strftime('%H:%M:%S'))
         self.s.poll()
@@ -135,13 +133,10 @@ class e2(object):
         self.time = self.builder.get_object("clock")
 
         self.gremlin = e1_gremlin(self.ini_file_object)
-        self.gremlin.current_view ='z'
+        self.gremlin.current_view = 'z'
         self.plot = self.builder.get_object('hbox15')
         self.plot.pack_start(self.gremlin)
-        self.plot.reorder_child(self.gremlin,1)
-
-
-
+        self.plot.reorder_child(self.gremlin, 1)
 
     def callback1(self, notebook, tab, index):
         self.s.poll()
@@ -181,15 +176,13 @@ class e2(object):
         if pflag == True:
             self.messagedialog.destroy()
         else:
-            self.statusbar.push(
-                self.context_id, "Pressure Not Set. Make sure to connect before proceding %s" % str(self.status_count))
-
+            self.update_statusbar("Pressure Not Set. Make sure to connect before proceding")
+            
     # refresh buton
     def on_refresh_clicked(self, widget, data=None):
         print("Refresh clicked")
-        self.status_count += 1
-        self.statusbar.push(
-            self.context_id, "Refersh Clicked %s" % str(self.status_count))
+
+        self.update_statusbar("Refresh clicked")
 
         self.s.poll()
         if self.s.task_mode != self.cnc.MODE_MANUAL:
@@ -197,16 +190,9 @@ class e2(object):
             self.c.wait_complete()
         self.builder.get_object("mode_status").set_text("Manual Mode")
 
-        
-
     def on_full_screen_activate(self, menuitem, data=None):
         self.window.maximize()
-        while(self.status_count > 0):
-            self.statusbar.pop(self.context_id)
-            self.status_count -= 1
-        self.status_count += 1
-        self.statusbar.push(
-            self.context_id, "Window Maximized %s" % str(self.status_count))
+        self.update_statusbar("Window Maximized")
 
     def on_window1_destroy(self, widget, data=None):
         print("Quit with cancel")
@@ -235,9 +221,7 @@ class e2(object):
             global jog_set
             jog_set = gtk.Buildable.get_name(widget)
             print('active ') + jog_set
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, jog_set + " mm mode set %s" % str(self.status_count))
+            self.update_statusbar(str(jog_set) + " mm jogging mode set")
 
     # jogging
 
@@ -422,25 +406,18 @@ class e2(object):
         self.homing_ok(0)
         if self.homing_ok(0):
             print('ok to home axis 0')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Ready to home X-Axis %s" % str(self.status_count))
+            self.update_statusbar("Ready to home X-Axis")
             print('homing axis 0')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Homing X-Axis Please Wait!! %s" % str(self.status_count))
+            self.update_statusbar("Homing X-Axis Please Wait!!")
             self.c.home(0)
             self.c.home(2)
             self.c.wait_complete()
             print('axis 0 homed')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "X-Axis homed %s" % str(self.status_count))
+            self.update_statusbar("X-Axis homed")
+
         else:
             print('can not home axis 0')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Cannot Home X-Axis %s" % str(self.status_count))
+            self.update_statusbar("Cannot Home X-Axis")
 
     def on_home_y_clicked(self, widget, data=None):
         print('home Y button clicked')
@@ -448,25 +425,19 @@ class e2(object):
         self.homing_ok(1)
         if self.homing_ok(1):
             print('ok to home axis 1')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Ready to home Y-Axis %s" % str(self.status_count))
+            self.update_statusbar("Ready to home Y-Axis")
 
             print('homing axis 1')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Homing Y-Axis Please Wait!! %s" % str(self.status_count))
+            self.update_statusbar("Homing Y-Axis Please Wait!!")
             self.c.home(1)
             self.c.home(2)
             self.c.wait_complete()
             print('axis 1 homed')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Y-Axis homed %s" % str(self.status_count))
+            self.update_statusbar("Y-Axis homed")
+
         else:
             print('can not home axis 0')
-            self.statusbar.push(
-                self.context_id, "Cannot Home Y-Axis %s" % str(self.status_count))
+            self.update_statusbar("Cannot Home Y-Axis ")
 
     def on_home_all_clicked(self, widget, data=None):
         print('home all button clicked')
@@ -479,20 +450,18 @@ class e2(object):
             print('ok to home axis Both axis')
             print('homing axis 1')
             self.update_statusbar("Homing X and Y-Axis Please Wait!! ")
-            
-            
+
             self.c.home(2)
             self.c.home(1)
             self.c.home(0)
 
             self.c.wait_complete()
-            print('axis 1 homed')            
+            print('axis 1 homed')
             self.update_statusbar("X and Y-Axis homed ")
 
         else:
             print('can not home axis 0')
             self.update_statusbar(" Cannot Home X and Y-Axis ")
-            
 
         # head
 
@@ -502,7 +471,6 @@ class e2(object):
             print('HEAD DOWN')
             self.c.mist(self.cnc.MIST_ON)
             self.update_statusbar(" Pnuematic Head Down ")
-            
 
     def on_head_up_clicked(self, widget, data=None):
         global pflag
@@ -510,7 +478,6 @@ class e2(object):
             print('HEAD UP')
             self.c.mist(self.cnc.MIST_OFF)
             self.update_statusbar("Pnuematic Head Up ")
-           
 
     def postgui(self):
         # inifile = linuxcnc.ini(sys.argv[2])
@@ -547,7 +514,6 @@ class e2(object):
         elif rflag == True & lflag == False:
             self.mapimg.set_from_file("left_down.jpg")
             self.update_statusbar("Improper Head Pressure! investigate ")
-            
 
         # Hal_Led change_load_cell
 
@@ -612,26 +578,25 @@ class e2(object):
     def on_hal_led8_hal_pin_changed(self, hal_led, data=None):
         print("on_led7_pin_changed()- hal pin value:", hal_led.hal_pin.get())
         self.programflag = hal_led.hal_pin.get()
-    
-    def on_clear_plot_activate(self, widget , data =None):
+
+    def on_clear_plot_activate(self, widget, data=None):
         self.clear_live_plotter()
-    def on_clear_status_activate(self , widget ,data = None):
+
+    def on_clear_status_activate(self, widget, data=None):
         statusbar.pop(context_id)
-            
+
 
 class e2_gremlin(gremlin.Gremlin):
     def __init__(self):
-         gremlin.Gremlin.__init__(self,inifile)
-    
-    def report_gcode_error(self , result , seq , filename ):
+        gremlin.Gremlin.__init__(self, inifile)
+
+    def report_gcode_error(self, result, seq, filename):
         import gcode
         error_str = gcode.strerror(result)
-        error = "G-code error in " + os.path.baseline(filename) + ' Near Line ' + str(seq) + ' of ' + filename + ' ' + error_str
+        error = "G-code error in " + \
+            os.path.baseline(filename) + ' Near Line ' + \
+            str(seq) + ' of ' + filename + ' ' + error_str
         e2.update_statusbar(error)
-
-
-
-
 
     # run the program
 if __name__ == "__main__":
