@@ -2,6 +2,7 @@
 
 # import libraries
 from ast import BitAnd, If
+from distutils.log import error
 import gtk
 import pygtk
 import sys
@@ -14,7 +15,7 @@ import subprocess
 import gobject
 import time
 import math
-# import gremlin
+import gremlin
 
 # import GladeBuilder
 
@@ -24,12 +25,11 @@ libdir = os.path.join(BASE, "lib", "python")
 sys.path.insert(0, libdir)
 datadir = os.path.join(BASE, "share", "linuxcnc")
 xmlname = os.path.join(datadir, "e1.glade")
-flag =  False
+flag = False
 rflag = False
 lflag = False
 gflag = False
 pflag = False
-
 jog_set = 100.00
 s_c = 0
 t_c = 0
@@ -40,6 +40,10 @@ t_c = data
 
 
 class e2(object):
+    def update_statusbar(message):
+        
+        statusbar.push(context_id, message)
+
 
     def periodic(self):  # fetch status items and update screen
         self.s.poll()
@@ -59,25 +63,28 @@ class e2(object):
 
         # print("\n periodic fuction")
         # poll the status channel
+        
+        
         self.error_status = self.ec.poll()
         error_kind = ''
         error_text = ''
         if self.error_status:
-            error_kind = self.error_status
-            error_text = self.error_status
+          error_kind = self.error_status
+          error_text = self.error_status
         if error_kind in (self.cnc.NML_ERROR, self.cnc.OPERATOR_ERROR):
-            error_type = "Error "
+           error_type = "Error "
         else:
-            error_type = "Info "
+           error_type = "Info "
 
         error_text2 = ''
         for item in error_text:
-            error_text2 = error_text2 + str(item)
+          error_text2 = error_text2 + str(item)
+        #self.response1.set_property("text", error_type+ "  " +error_text2)   
+        #self.response1 = self.messagedialog2.run()
+        #self.messagedialog.hide()
 
-        self.status_count += 1
-        self.message_id = self.statusbar.push(
-            self.context_id, error_type + error_text2)
-        # Head image change
+#       
+       # Head image change
         self.imagechange(rflag, lflag)
         self.time.set_text(time.strftime('%H:%M:%S'))
         self.s.poll()
@@ -85,7 +92,7 @@ class e2(object):
         self.builder.get_object("feedrate").set_text(str(5000*feed))
         rapid = self.s.rapidrate
         self.builder.get_object("rapidrate").set_text(str(5000*rapid))
-        
+
         return True  # must return True to keep running
 
     def __init__(self, inifile):
@@ -100,11 +107,14 @@ class e2(object):
         self.panel = gladevcp.makepins.GladePanel(
             self.halcomp, xmlname, self.builder, None)
         # statusbar code ini
-        self.statusbar = self.builder.get_object("statusbar1")
-        self.context_id = self.statusbar.get_context_id("status")
+        global statusbar
+        statusbar = self.builder.get_object("statusbar1")
+        global context_id
+        context_id = self.statusbar.get_context_id("status")
         self.status_count = 0
         self.aboutdialog = self.builder.get_object("aboutdialog1")
         self.messagedialog = self.builder.get_object("messagedialog1")
+        self.messagedialog2 = self.builder.get_object("messagedialog2")
         self.halcomp.ready()
         self.window.show()
         self.tcl_dir = os.environ["LINUXCNC_TCL_DIR"] + "/bin/"  # halshow
@@ -123,6 +133,15 @@ class e2(object):
         self.builder.get_object("total").set_text(str(t_c))
         linuxcnc.command(linuxcnc.MODE_MANUAL)
         self.time = self.builder.get_object("clock")
+
+        self.gremlin = e1_gremlin(self.ini_file_object)
+        self.gremlin.current_view ='z'
+        self.plot = self.builder.get_object('hbox15')
+        self.plot.pack_start(self.gremlin)
+        self.plot.reorder_child(self.gremlin,1)
+
+
+
 
     def callback1(self, notebook, tab, index):
         self.s.poll()
@@ -178,9 +197,7 @@ class e2(object):
             self.c.wait_complete()
         self.builder.get_object("mode_status").set_text("Manual Mode")
 
-        while(self.status_count > 0):
-            self.statusbar.pop(self.context_id)
-            self.status_count -= 1
+        
 
     def on_full_screen_activate(self, menuitem, data=None):
         self.window.maximize()
@@ -460,27 +477,22 @@ class e2(object):
 
         if self.homing_ok(1) and self.homing_ok(0):
             print('ok to home axis Both axis')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Ready to home Y-Axis %s" % str(self.status_count))
             print('homing axis 1')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Homing X and Y-Axis Please Wait!! %s" % str(self.status_count))
+            self.update_statusbar("Homing X and Y-Axis Please Wait!! ")
+            
+            
             self.c.home(2)
             self.c.home(1)
             self.c.home(0)
 
             self.c.wait_complete()
-            print('axis 1 homed')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "X and Y-Axis homed %s" % str(self.status_count))
+            print('axis 1 homed')            
+            self.update_statusbar("X and Y-Axis homed ")
+
         else:
             print('can not home axis 0')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Cannot Home X and Y-Axis %s" % str(self.status_count))
+            self.update_statusbar(" Cannot Home X and Y-Axis ")
+            
 
         # head
 
@@ -489,18 +501,16 @@ class e2(object):
         if pflag == True:
             print('HEAD DOWN')
             self.c.mist(self.cnc.MIST_ON)
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Pnuematic Head Down %s" % str(self.status_count))
+            self.update_statusbar(" Pnuematic Head Down ")
+            
 
     def on_head_up_clicked(self, widget, data=None):
         global pflag
         if pflag == True:
             print('HEAD UP')
             self.c.mist(self.cnc.MIST_OFF)
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Pnuematic Head Up %s" % str(self.status_count))
+            self.update_statusbar("Pnuematic Head Up ")
+           
 
     def postgui(self):
         # inifile = linuxcnc.ini(sys.argv[2])
@@ -533,14 +543,11 @@ class e2(object):
             self.mapimg.set_from_file("head_up.jpg")
         elif rflag == False & lflag == True:
             self.mapimg.set_from_file("right_down.jpg")
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Improper Head Pressure! investigate %s" % str(self.status_count))
+            self.update_statusbar("Improper Head Pressure! investigate ")
         elif rflag == True & lflag == False:
             self.mapimg.set_from_file("left_down.jpg")
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Improper Head Pressure! investigate %s" % str(self.status_count))
+            self.update_statusbar("Improper Head Pressure! investigate ")
+            
 
         # Hal_Led change_load_cell
 
@@ -567,9 +574,7 @@ class e2(object):
                 self.c.auto(self.cnc.AUTO_RESUME)
                 print("Resume from pythom", pflag)
 
-
-
-        else: 
+        else:
             if pflag == False:
                 self.c.state(self.cnc.STATE_ESTOP)
                 print("estop python")
@@ -579,10 +584,7 @@ class e2(object):
             elif pflag == True:
                 self.c.state(self.cnc.STATE_ESTOP_RESET)
                 print("estop reset", pflag)
-        
 
-            
-       
      # Hal_Led chang_Spot_pulse
 
     def on_hal_led6_hal_pin_changed(self, hal_led, data=None):
@@ -610,6 +612,26 @@ class e2(object):
     def on_hal_led8_hal_pin_changed(self, hal_led, data=None):
         print("on_led7_pin_changed()- hal pin value:", hal_led.hal_pin.get())
         self.programflag = hal_led.hal_pin.get()
+    
+    def on_clear_plot_activate(self, widget , data =None):
+        self.clear_live_plotter()
+    def on_clear_status_activate(self , widget ,data = None):
+        statusbar.pop(context_id)
+            
+
+class e2_gremlin(gremlin.Gremlin):
+    def __init__(self):
+         gremlin.Gremlin.__init__(self,inifile)
+    
+    def report_gcode_error(self , result , seq , filename ):
+        import gcode
+        error_str = gcode.strerror(result)
+        error = "G-code error in " + os.path.baseline(filename) + ' Near Line ' + str(seq) + ' of ' + filename + ' ' + error_str
+        e2.update_statusbar(error)
+
+
+
+
 
     # run the program
 if __name__ == "__main__":
