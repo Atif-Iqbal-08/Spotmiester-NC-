@@ -2,6 +2,7 @@
 
 # import libraries
 from ast import BitAnd, If
+from distutils.log import error
 import gtk
 import pygtk
 import sys
@@ -14,7 +15,7 @@ import subprocess
 import gobject
 import time
 import math
-# import gremlin
+import gremlin
 
 # import GladeBuilder
 
@@ -24,12 +25,11 @@ libdir = os.path.join(BASE, "lib", "python")
 sys.path.insert(0, libdir)
 datadir = os.path.join(BASE, "share", "linuxcnc")
 xmlname = os.path.join(datadir, "e1.glade")
-flag =  False
+flag = False
 rflag = False
 lflag = False
 gflag = False
 pflag = False
-
 jog_set = 100.00
 s_c = 0
 t_c = 0
@@ -40,52 +40,41 @@ t_c = data
 
 
 class e2(object):
+    def update_statusbar (self,message):
 
+        statusbar.push(context_id, str(message))
+        
     def periodic(self):  # fetch status items and update screen
-        self.s.poll()
-        if self.s.task_mode == self.cnc.MODE_MANUAL:
-            self.mode = 'MANUAL'
-            self.builder.get_object("mode_status").set_text("Manual Mode")
-        elif self.s.task_mode == self.cnc.MODE_MDI:
-            self.mode = 'MDI'
-            self.builder.get_object("mode_status").set_text("MDI Mode")
-        if self.s.task_mode == self.cnc.MODE_AUTO:
-            self.mode = 'AUTO'
-            self.builder.get_object("mode_status").set_text("Auto Mode")
-        else:
-            self.mode = 'N/A'
-
-        # print(self.mode)
-
-        # print("\n periodic fuction")
-        # poll the status channel
+      
+        
         self.error_status = self.ec.poll()
-        error_kind = ''
-        error_text = ''
         if self.error_status:
-            error_kind = self.error_status
-            error_text = self.error_status
-        if error_kind in (self.cnc.NML_ERROR, self.cnc.OPERATOR_ERROR):
-            error_type = "Error "
-        else:
-            error_type = "Info "
+              self.error_kind, self.error_text = self.error_status
+              if self.error_kind in (linuxcnc.NML_ERROR, linuxcnc.OPERATOR_ERROR):
+                self.error_type = "Error: "
+              else:
+                self.error_type = "Info: "
+              self.message_id = self.update_statusbar(self.error_type + self.error_text)
 
-        error_text2 = ''
-        for item in error_text:
-            error_text2 = error_text2 + str(item)
+               
+             
+        self.s.poll()
+        dict = {0:'None', 1:'MDI',2:'Auto', 3:'Manual'}
+        data = self.s.task_mode
+        text = dict[data]
+        self.builder.get_object("mode_status").set_text("text")
 
-        self.status_count += 1
-        self.message_id = self.statusbar.push(
-            self.context_id, error_type + error_text2)
-        # Head image change
+
+#
+         # Head image change
         self.imagechange(rflag, lflag)
         self.time.set_text(time.strftime('%H:%M:%S'))
         self.s.poll()
         feed = self.s.feedrate
         self.builder.get_object("feedrate").set_text(str(5000*feed))
         rapid = self.s.rapidrate
-        self.builder.get_object("rapidrate").set_text(str(5000*rapid))
-        
+        self.builder.get_object("rapidrate").set_text(str(int(5000*rapid)))
+
         return True  # must return True to keep running
 
     def __init__(self, inifile):
@@ -94,17 +83,21 @@ class e2(object):
         self.builder.add_from_file(xmlname)
         self.builder.connect_signals(self)
         self.window = self.builder.get_object("window1")
+        self.window.set_title( ' Spotmiester NC ' )
+
         self.halcomp = hal.component("e1")
         self.settings = gtk.settings_get_default()
         self.settings.set_property("gtk-theme-name", "Adwaita-dark")
-        self.panel = gladevcp.makepins.GladePanel(
-            self.halcomp, xmlname, self.builder, None)
+        self.panel = gladevcp.makepins.GladePanel(self.halcomp, xmlname, self.builder, None)
         # statusbar code ini
-        self.statusbar = self.builder.get_object("statusbar1")
-        self.context_id = self.statusbar.get_context_id("status")
-        self.status_count = 0
+        global statusbar
+        statusbar = self.builder.get_object("statusbar1")
+        global context_id
+        context_id = statusbar.get_context_id("status")
+       
         self.aboutdialog = self.builder.get_object("aboutdialog1")
         self.messagedialog = self.builder.get_object("messagedialog1")
+       
         self.halcomp.ready()
         self.window.show()
         self.tcl_dir = os.environ["LINUXCNC_TCL_DIR"] + "/bin/"  # halshow
@@ -124,25 +117,44 @@ class e2(object):
         linuxcnc.command(linuxcnc.MODE_MANUAL)
         self.time = self.builder.get_object("clock")
 
+        
+
     def callback1(self, notebook, tab, index):
         self.s.poll()
         if index == 0:
             print("manual mode selected")
             self.c.mode(self.cnc.MODE_MANUAL)
             self.c.teleop_enable(0)
+            self.update_statusbar("Manual Mode selected")
 
         elif index == 1:
             print("MDI selected")
+            self.update_statusbar("MDI selected")
 
         elif index == 2:
-            print("Auto Mode Selected")
+            #print("Auto Mode Selected")
+            self.update_statusbar("G-code View")
 
         elif index == 3:
-            print(" Calculator ")
-        elif index == 4:
-            print("Gcode Generator")
+            #print(" Calculator ")
+            self.update_statusbar("Calculator selected ")
+        
 
     # create methods to handle the signal handlers
+
+    # theme Selection
+
+    def on_dark_mode_ativate (self , menuitem , data= None ):
+        self.settings.set_property("gtk-theme-name", "Adwaita-dark")
+    
+    def on_light_mode_activate (self , menuitem , data= None ):
+        self.settings.set_property("gtk-theme-name", "Adwaita")
+
+
+
+
+
+
 
     # Pressure Warning Message
 
@@ -151,26 +163,21 @@ class e2(object):
         if pflag == True:
             self.messagedialog.destroy()
         else:
-            while(self.status_count > 0):
-                self.statusbar.pop(self.context_id)
-                self.status_count -= 1
-            self.statusbar.push(
-                self.context_id, "Pressure Not Set. Make sure to connect before proceding %s" % str(self.status_count))
+            self.update_statusbar("Pressure Not Set. Make sure to connect before proceding")
+            
 
     def on_messagedialog1_destroy(self, widget, data=None):
         global pflag
         if pflag == True:
             self.messagedialog.destroy()
         else:
-            self.statusbar.push(
-                self.context_id, "Pressure Not Set. Make sure to connect before proceding %s" % str(self.status_count))
-
+            self.update_statusbar("Pressure Not Set. Make sure to connect before proceding")
+            
     # refresh buton
     def on_refresh_clicked(self, widget, data=None):
         print("Refresh clicked")
-        self.status_count += 1
-        self.statusbar.push(
-            self.context_id, "Refersh Clicked %s" % str(self.status_count))
+
+        self.update_statusbar("Refresh clicked")
 
         self.s.poll()
         if self.s.task_mode != self.cnc.MODE_MANUAL:
@@ -178,38 +185,29 @@ class e2(object):
             self.c.wait_complete()
         self.builder.get_object("mode_status").set_text("Manual Mode")
 
-        while(self.status_count > 0):
-            self.statusbar.pop(self.context_id)
-            self.status_count -= 1
-
     def on_full_screen_activate(self, menuitem, data=None):
         self.window.maximize()
-        while(self.status_count > 0):
-            self.statusbar.pop(self.context_id)
-            self.status_count -= 1
-        self.status_count += 1
-        self.statusbar.push(
-            self.context_id, "Window Maximized %s" % str(self.status_count))
+        self.update_statusbar("Window Maximized")
 
     def on_window1_destroy(self, widget, data=None):
-        print("Quit with cancel")
+        #print("Quit with cancel")
 
         file.close()
         gtk.main_quit()
 
     def on_gtk_quit_activate(self, menuitem, data=None):
 
-        print("Quit from menu")
+        #print("Quit from menu")
 
         file.close()
         gtk.main_quit()
 
     def on_menu_halshow_activate(self, widget, data=None):
-        print("Menu Hal Show")
+        #print("Menu Hal Show")
         subprocess.Popen("/usr/bin/halshow", 2000)
 
     def on_gtk_about_activate(self, menuitem, data=None):
-        print("help about selected")
+        #print("help about selected")
         self.response = self.aboutdialog.run()
         self.aboutdialog.hide()
 
@@ -217,10 +215,8 @@ class e2(object):
         if widget.get_active():
             global jog_set
             jog_set = gtk.Buildable.get_name(widget)
-            print('active ') + jog_set
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, jog_set + " mm mode set %s" % str(self.status_count))
+            #print('active ') + jog_set
+            self.update_statusbar(str(jog_set) + " mm jogging mode set")
 
     # jogging
 
@@ -230,11 +226,11 @@ class e2(object):
         if self.s.task_mode != self.cnc.MODE_MANUAL:
             self.c.mode(self.cnc.MODE_MANUAL)
         if pflag == True:
-            print('jog x plus pressed')
+            #print('jog x plus pressed')
             if self.builder.get_object("jog_speed").get_value() > 0:
-                print(self.builder.get_object("jog_speed").get_value())
-                print("jog_set = ")
-                print(jog_set)
+                #print(self.builder.get_object("jog_speed").get_value())
+                #print("jog_set = ")
+                #print(jog_set)
                 if jog_set == 100:
                     print("cont")
                     self.c.jog(linuxcnc.JOG_CONTINUOUS, 1, 0,
@@ -245,7 +241,7 @@ class e2(object):
                     self.c.wait_complete()
 
     def on_jog_x_plus_released(self, widget, data=None):
-        print('jog x plus released')
+        #print('jog x plus released')
         self.c.jog(linuxcnc.JOG_STOP, 1, 0)
 
     def on_jog_x_minus_pressed(self, widget, data=None):
@@ -254,7 +250,7 @@ class e2(object):
         if self.s.task_mode != self.cnc.MODE_MANUAL:
             self.c.mode(self.cnc.MODE_MANUAL)
         if pflag == True:
-            print('jog x minus pressed')
+            #print('jog x minus pressed')
             if self.builder.get_object("jog_speed").get_value() > 0:
                 print(self.builder.get_object("jog_speed").get_value())
                 if jog_set == 100:
@@ -266,7 +262,7 @@ class e2(object):
                     self.c.wait_complete()
 
     def on_jog_x_minus_released(self, widget, data=None):
-        print('jog x minus released')
+        #print('jog x minus released')
         self.c.jog(linuxcnc.JOG_STOP, 1, 0)
 
     def on_jog_y_plus_pressed(self, widget, data=None):
@@ -275,7 +271,7 @@ class e2(object):
         if self.s.task_mode != self.cnc.MODE_MANUAL:
             self.c.mode(self.cnc.MODE_MANUAL)
         if pflag == True:
-            print('jog y plus pressed')
+            #print('jog y plus pressed')
             if self.builder.get_object("jog_speed").get_value() > 0:
                 print(self.builder.get_object("jog_speed").get_value())
                 if jog_set == 100:
@@ -287,7 +283,7 @@ class e2(object):
                     self.c.wait_complete()
 
     def on_jog_y_plus_released(self, widget, data=None):
-        print('jog y plus released')
+        #print('jog y plus released')
         self.c.jog(linuxcnc.JOG_STOP, 1, 1)
 
     def on_jog_y_minus_pressed(self, widget, data=None):
@@ -296,7 +292,7 @@ class e2(object):
         if self.s.task_mode != self.cnc.MODE_MANUAL:
             self.c.mode(self.cnc.MODE_MANUAL)
         if pflag == True:
-            print('jog y minus pressed')
+            #print('jog y minus pressed')
             if self.builder.get_object("jog_speed").get_value() > 0:
                 print(self.builder.get_object("jog_speed").get_value())
                 if jog_set == 100:
@@ -308,7 +304,7 @@ class e2(object):
                     self.c.wait_complete()
 
     def on_jog_y_minus_released(self, widget, data=None):
-        print('jog y minus released')
+        #print('jog y minus released')
         self.c.jog(linuxcnc.JOG_STOP, 1, 1)
 
         # jogging with keys
@@ -316,9 +312,9 @@ class e2(object):
     def on_key_press_event(self, widget, event):
         global pflag
         if pflag == True:
-            print(event.keyval)
+            #print(event.keyval)
             if event.keyval == 65362:  # up
-                print('jog y minus pressed')
+                #print('jog y minus pressed')
                 if self.builder.get_object("jog_speed").get_value() > 0:
                     print(self.builder.get_object("jog_speed").get_value())
                     if jog_set == 100.0:
@@ -330,7 +326,7 @@ class e2(object):
                         self.c.wait_complete()
 
             if event.keyval == 65364:  # down
-                print('jog y plus pressed')
+                #print('jog y plus pressed')
                 if self.builder.get_object("jog_speed").get_value() > 0:
                     print(self.builder.get_object("jog_speed").get_value())
                     if jog_set == 100:
@@ -342,7 +338,7 @@ class e2(object):
                         self.c.wait_complete()
 
             if event.keyval == 65363:  # left
-                print('jog x minus pressed')
+                #print('jog x minus pressed')
                 if self.builder.get_object("jog_speed").get_value() > 0:
                     print(self.builder.get_object("jog_speed").get_value())
                     if jog_set == 100:
@@ -354,7 +350,7 @@ class e2(object):
                         self.c.wait_complete()
 
             if event.keyval == 65361:  # right
-                print('jog x plus pressed')
+                #print('jog x plus pressed')
                 if self.builder.get_object("jog_speed").get_value() > 0:
                     print(self.builder.get_object("jog_speed").get_value())
                     if jog_set == 100:
@@ -368,26 +364,28 @@ class e2(object):
             if event.keyval is 32:
                 global flag
                 if flag == False:
-                    print(" program is paused")
+                    #print(" program is paused")
                     self.c.auto(linuxcnc.AUTO_PAUSE)
+                    self.update_statusbar("Program is Paused")
                     flag = True
                 elif flag == True:
-                    print(" program is resumed")
+                    #print(" program is resumed")
                     self.c.auto(linuxcnc.AUTO_RESUME)
+                    self.update_statusbar("Program is Resumed")
                     flag = False
 
     def on_key_release(self, widget, event):
         if event.keyval == 65362:  # up stop
-            print('jog y minus released')
+            #print('jog y minus released')
             self.c.jog(linuxcnc.JOG_STOP, 1, 1)
         if event.keyval == 65364:  # down stop
-            print('jog y minus released')
+            #print('jog y minus released')
             self.c.jog(linuxcnc.JOG_STOP, 1, 1)
         if event.keyval == 65361:  # left stop
-            print('jog y minus released')
+            #print('jog y minus released')
             self.c.jog(linuxcnc.JOG_STOP, 1, 0)
         if event.keyval == 65363:  # right stop
-            print('jog y minus released')
+            #print('jog y minus released')
             self.c.jog(linuxcnc.JOG_STOP, 1, 0)
 
             # homing
@@ -400,107 +398,83 @@ class e2(object):
             return False
 
     def on_home_x_clicked(self, widget, data=None):
-        print('home x button clicked')
-        print('homing ok status for x =')
+        #print('home x button clicked')
+        #print('homing ok status for x =')
         self.homing_ok(0)
         if self.homing_ok(0):
-            print('ok to home axis 0')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Ready to home X-Axis %s" % str(self.status_count))
-            print('homing axis 0')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Homing X-Axis Please Wait!! %s" % str(self.status_count))
+            #print('ok to home axis 0')
+            self.update_statusbar("Ready to home X-Axis")
+            #print('homing axis 0')
+            self.update_statusbar("Homing X-Axis Please Wait!!")
             self.c.home(0)
             self.c.home(2)
             self.c.wait_complete()
-            print('axis 0 homed')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "X-Axis homed %s" % str(self.status_count))
+            #print('axis 0 homed')
+            self.update_statusbar("X-Axis homed")
+
         else:
-            print('can not home axis 0')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Cannot Home X-Axis %s" % str(self.status_count))
+            #print('can not home axis 0')
+            self.update_statusbar("Cannot Home X-Axis")
 
     def on_home_y_clicked(self, widget, data=None):
-        print('home Y button clicked')
-        print('homing ok status for Y =')
+        #print('home Y button clicked')
+        #print('homing ok status for Y =')
         self.homing_ok(1)
         if self.homing_ok(1):
-            print('ok to home axis 1')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Ready to home Y-Axis %s" % str(self.status_count))
+            #print('ok to home axis 1')
+            self.update_statusbar("Ready to home Y-Axis")
 
-            print('homing axis 1')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Homing Y-Axis Please Wait!! %s" % str(self.status_count))
+            #print('homing axis 1')
+            self.update_statusbar("Homing Y-Axis Please Wait!!")
             self.c.home(1)
             self.c.home(2)
             self.c.wait_complete()
-            print('axis 1 homed')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Y-Axis homed %s" % str(self.status_count))
+            #print('axis 1 homed')
+            self.update_statusbar("Y-Axis homed")
+
         else:
-            print('can not home axis 0')
-            self.statusbar.push(
-                self.context_id, "Cannot Home Y-Axis %s" % str(self.status_count))
+            #print('can not home axis 0')
+            self.update_statusbar("Cannot Home Y-Axis ")
 
     def on_home_all_clicked(self, widget, data=None):
-        print('home all button clicked')
-        print('homing ok status for Y-axis =')
+        #print('home all button clicked')
+        #print('homing ok status for Y-axis =')
         self.homing_ok(1)
-        print('homing ok status for X-axis =')
+        #print('homing ok status for X-axis =')
         self.homing_ok(0)
 
         if self.homing_ok(1) and self.homing_ok(0):
-            print('ok to home axis Both axis')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Ready to home Y-Axis %s" % str(self.status_count))
-            print('homing axis 1')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Homing X and Y-Axis Please Wait!! %s" % str(self.status_count))
+            #print('ok to home axis Both axis')
+            #print('homing axis 1')
+            self.update_statusbar("Homing X and Y-Axis Please Wait!! ")
+
             self.c.home(2)
             self.c.home(1)
             self.c.home(0)
 
             self.c.wait_complete()
-            print('axis 1 homed')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "X and Y-Axis homed %s" % str(self.status_count))
+            #print('axis 1 homed')
+            self.update_statusbar("X and Y-Axis homed ")
+
         else:
-            print('can not home axis 0')
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Cannot Home X and Y-Axis %s" % str(self.status_count))
+            #print('can not home axis 0')
+            self.update_statusbar(" Cannot Home X and Y-Axis ")
 
         # head
 
     def on_head_down_clicked(self, widget, data=None):
         global pflag
         if pflag == True:
-            print('HEAD DOWN')
+            #print('HEAD DOWN')
             self.c.mist(self.cnc.MIST_ON)
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Pnuematic Head Down %s" % str(self.status_count))
+            self.update_statusbar(" Pnuematic Head Down ")
 
     def on_head_up_clicked(self, widget, data=None):
         global pflag
         if pflag == True:
-            print('HEAD UP')
+            #print('HEAD UP')
             self.c.mist(self.cnc.MIST_OFF)
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Pnuematic Head Up %s" % str(self.status_count))
+            self.update_statusbar("Pnuematic Head Up ")
 
     def postgui(self):
         # inifile = linuxcnc.ini(sys.argv[2])
@@ -511,16 +485,14 @@ class e2(object):
     # Hal_Led change_hall_sensor L
     def on_hal_led3_hal_pin_changed(self, hal_led, data=None):
         global lflag
-        print("on_led3_pin_changed()- hal pin value:", hal_led.hal_pin.get())
-        # print("pin name = %s" % (pin.get_name))
-        # print("pin type = %d" % (pin.get_type()))
+        #print("on_led3_pin_changed()- hal pin value:", hal_led.hal_pin.get())
         lflag = hal_led.hal_pin.get()
 
      # Hal_Led change_hall_sensor R
 
     def on_hal_led4_hal_pin_changed(self, hal_led, data=None):
         global rflag
-        print("on_led4_pin_changed()- hal pin value:", hal_led.hal_pin.get())
+        #print("on_led4_pin_changed()- hal pin value:", hal_led.hal_pin.get())
         rflag = hal_led.hal_pin.get()
 
     def imagechange(self, x, y):
@@ -533,26 +505,23 @@ class e2(object):
             self.mapimg.set_from_file("head_up.jpg")
         elif rflag == False & lflag == True:
             self.mapimg.set_from_file("right_down.jpg")
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Improper Head Pressure! investigate %s" % str(self.status_count))
+            self.update_statusbar("Improper Head Pressure! investigate ")
         elif rflag == True & lflag == False:
             self.mapimg.set_from_file("left_down.jpg")
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "Improper Head Pressure! investigate %s" % str(self.status_count))
+            self.update_statusbar("Improper Head Pressure! investigate ")
 
         # Hal_Led change_load_cell
 
     def on_hal_led1_hal_pin_changed(self, hal_led, data=None):
-        print("on_led1_pin_changed()- hal pin value:", hal_led.hal_pin.get())
+        #print("on_led1_pin_changed()- hal pin value:", hal_led.hal_pin.get())
+        pass
 
     def on_hal_led2_hal_pin_changed(self, hal_led, data=None):
-        print("on_led2_pin_changed()- hal pin value:", hal_led.hal_pin.get())
-
+        #print("on_led2_pin_changed()- hal pin value:", hal_led.hal_pin.get())
+        pass
         # Hal_Led change_pressure_sensor
     def on_hal_led5_hal_pin_changed(self, hal_led, data=None):
-        print("pressure sensor led:", hal_led.hal_pin.get())
+        #print("pressure sensor led:", hal_led.hal_pin.get())
         self.s.poll()
         global pflag
         pflag = hal_led.hal_pin.get()
@@ -560,33 +529,29 @@ class e2(object):
         if self.s.task_mode == self.cnc.MODE_AUTO:
             if pflag == False:
                 self.c.auto(self.cnc.AUTO_PAUSE)
-                print("Pause python")
+                self.update_statusbar(" !WARNING: System Pressure Low , Restoring pressure will resume program ")
+                #print("Pause python")
                 #self.response1 = self.messagedialog.run()
 
             elif pflag == True:
                 self.c.auto(self.cnc.AUTO_RESUME)
-                print("Resume from pythom", pflag)
+                #print("Resume from pythom", pflag)
 
-
-
-        else: 
+        else:
             if pflag == False:
                 self.c.state(self.cnc.STATE_ESTOP)
-                print("estop python")
+                #print("estop python")
                 self.response1 = self.messagedialog.run()
                 self.messagedialog.hide()
 
             elif pflag == True:
                 self.c.state(self.cnc.STATE_ESTOP_RESET)
-                print("estop reset", pflag)
-        
+                #print("estop reset", pflag)
 
-            
-       
      # Hal_Led chang_Spot_pulse
 
     def on_hal_led6_hal_pin_changed(self, hal_led, data=None):
-        print("on_led6_pin_changed()- hal pin value:", hal_led.hal_pin.get())
+        #print("on_led6_pin_changed()- hal pin value:", hal_led.hal_pin.get())
         global t_c, s_c
         if hal_led.hal_pin.get() == True:
             s_c += 1
@@ -601,15 +566,28 @@ class e2(object):
             self.builder.get_object("total").set_text(str(t_c))
 
     def on_hal_led7_hal_pin_changed(self, hal_led, data=None):
-        print("on_led7_pin_changed()- hal pin value:", hal_led.hal_pin.get())
+        #print("on_led7_pin_changed()- hal pin value:", hal_led.hal_pin.get())
         if hal_led.hal_pin.get() == True:
-            self.status_count += 1
-            self.statusbar.push(
-                self.context_id, "SpotWelder Connected , Head down command will trigger spot  %s" % str(self.status_count))
+            self.update_statusbar("SpotWelder Connected , Head down command will trigger spot")
+            
 
     def on_hal_led8_hal_pin_changed(self, hal_led, data=None):
-        print("on_led7_pin_changed()- hal pin value:", hal_led.hal_pin.get())
+        #print("on_led7_pin_changed()- hal pin value:", hal_led.hal_pin.get())
         self.programflag = hal_led.hal_pin.get()
+
+    def on_clear_plot_clicked(self, widget, data=None):
+        #print (" clear ")
+        self.g = self.builder.get_object("hal_gremlin1")
+        self.g.clear_live_plotter()
+        #print (" clear ")
+
+    def on_clear_status_clicked(self, widget, data=None):
+        #print (" clear status")
+        statusbar.pop(context_id)
+        
+
+
+
 
     # run the program
 if __name__ == "__main__":
