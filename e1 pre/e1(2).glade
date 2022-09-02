@@ -134,27 +134,13 @@
       <action-widget response="0">pbutton</action-widget>
     </action-widgets>
   </object>
-  <object class="EMC_Action_Open" id="vcp_action_open1">
-    <property name="tooltip" translatable="yes">Open Gcode File</property>
-  </object>
-  <object class="EMC_Action_Reload" id="vcp_action_reload1">
-    <property name="tooltip" translatable="yes">Referesh</property>
-  </object>
-  <object class="EMC_ToggleAction_ESTOP" id="vcp_toggleaction_estop1">
-    <property name="tooltip" translatable="yes">E-spot</property>
-  </object>
-  <object class="EMC_ToggleAction_Pause" id="vcp_toggleaction_pause1">
-    <property name="tooltip" translatable="yes">Pause Program</property>
-  </object>
-  <object class="EMC_ToggleAction_Power" id="vcp_toggleaction_power1">
-    <property name="tooltip" translatable="yes">Power</property>
-  </object>
-  <object class="EMC_ToggleAction_Run" id="vcp_toggleaction_run1">
-    <property name="tooltip" translatable="yes">Program RUN</property>
-  </object>
-  <object class="EMC_ToggleAction_Stop" id="vcp_toggleaction_stop1">
-    <property name="tooltip" translatable="yes">Program Stop</property>
-  </object>
+  <object class="EMC_Action_Open" id="vcp_action_open1"/>
+  <object class="EMC_Action_Reload" id="vcp_action_reload1"/>
+  <object class="EMC_ToggleAction_ESTOP" id="vcp_toggleaction_estop1"/>
+  <object class="EMC_ToggleAction_Pause" id="vcp_toggleaction_pause1"/>
+  <object class="EMC_ToggleAction_Power" id="vcp_toggleaction_power1"/>
+  <object class="EMC_ToggleAction_Run" id="vcp_toggleaction_run1"/>
+  <object class="EMC_ToggleAction_Stop" id="vcp_toggleaction_stop1"/>
   <object class="GtkWindow" id="window1">
     <property name="width_request">1280</property>
     <property name="height_request">720</property>
@@ -515,8 +501,7 @@
           <object class="GtkHBox" id="hbox1">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="spacing">10</property>
-            <property name="homogeneous">True</property>
+            <property name="spacing">1</property>
             <child>
               <object class="GtkNotebook" id="notebook1">
                 <property name="visible">True</property>
@@ -558,8 +543,6 @@
                               <object class="HAL_HScale" id="jog_speed">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="tooltip_text" translatable="yes">Set Jogging Speed
-</property>
                                 <property name="adjustment">adjustment1</property>
                                 <property name="round_digits">1</property>
                                 <property name="digits">0</property>
@@ -670,30 +653,6 @@
                                     <property name="top_attach">1</property>
                                     <property name="bottom_attach">2</property>
                                   </packing>
-                                </child>
-                                <child>
-                                  <placeholder/>
-                                </child>
-                                <child>
-                                  <placeholder/>
-                                </child>
-                                <child>
-                                  <placeholder/>
-                                </child>
-                                <child>
-                                  <placeholder/>
-                                </child>
-                                <child>
-                                  <placeholder/>
-                                </child>
-                                <child>
-                                  <placeholder/>
-                                </child>
-                                <child>
-                                  <placeholder/>
-                                </child>
-                                <child>
-                                  <placeholder/>
                                 </child>
                                 <child>
                                   <placeholder/>
@@ -974,6 +933,9 @@
                           </packing>
                         </child>
                       </object>
+                      <packing>
+                        <property name="x_options">GTK_FILL</property>
+                      </packing>
                     </child>
                     <child>
                       <object class="GtkVBox" id="vbox6">
@@ -991,8 +953,8 @@
                             </attributes>
                           </object>
                           <packing>
-                            <property name="expand">True</property>
-                            <property name="fill">True</property>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
                             <property name="position">0</property>
                           </packing>
                         </child>
@@ -1010,7 +972,7 @@
                             <signal name="toggled" handler="button_select" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="expand">True</property>
+                            <property name="expand">False</property>
                             <property name="fill">True</property>
                             <property name="position">1</property>
                           </packing>
@@ -1028,7 +990,7 @@
                             <signal name="toggled" handler="button_select" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="expand">True</property>
+                            <property name="expand">False</property>
                             <property name="fill">True</property>
                             <property name="position">2</property>
                           </packing>
@@ -1046,7 +1008,7 @@
                             <signal name="toggled" handler="button_select" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="expand">True</property>
+                            <property name="expand">False</property>
                             <property name="fill">True</property>
                             <property name="position">3</property>
                           </packing>
@@ -1064,7 +1026,7 @@
                             <signal name="toggled" handler="button_select" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="expand">True</property>
+                            <property name="expand">False</property>
                             <property name="fill">True</property>
                             <property name="position">4</property>
                           </packing>
@@ -1082,7 +1044,7 @@
                             <signal name="toggled" handler="button_select" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="expand">True</property>
+                            <property name="expand">False</property>
                             <property name="fill">True</property>
                             <property name="position">5</property>
                           </packing>
@@ -1100,7 +1062,7 @@
                             <signal name="toggled" handler="button_select" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="expand">True</property>
+                            <property name="expand">False</property>
                             <property name="fill">True</property>
                             <property name="position">6</property>
                           </packing>
@@ -1109,6 +1071,8 @@
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="right_attach">2</property>
+                        <property name="x_options">GTK_SHRINK</property>
+                        <property name="y_options">GTK_SHRINK | GTK_FILL</property>
                         <property name="x_padding">5</property>
                       </packing>
                     </child>
@@ -1233,7 +1197,7 @@
                 </child>
               </object>
               <packing>
-                <property name="expand">True</property>
+                <property name="expand">False</property>
                 <property name="fill">True</property>
                 <property name="position">0</property>
               </packing>
@@ -1249,13 +1213,14 @@
                     <property name="pixbuf">left_down.jpg</property>
                   </object>
                   <packing>
-                    <property name="expand">False</property>
+                    <property name="expand">True</property>
                     <property name="fill">True</property>
                     <property name="position">0</property>
                   </packing>
                 </child>
                 <child>
                   <object class="HAL_Gremlin" id="hal_gremlin1">
+                    <property name="width_request">400</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="enable_dro">False</property>
@@ -1280,7 +1245,7 @@
             </child>
           </object>
           <packing>
-            <property name="expand">False</property>
+            <property name="expand">True</property>
             <property name="fill">True</property>
             <property name="position">2</property>
           </packing>
@@ -1300,7 +1265,7 @@
                     <property name="can_focus">False</property>
                     <property name="label" translatable="yes">Sensor Status</property>
                     <attributes>
-                      <attribute name="weight" value="semibold"/>
+                      <attribute name="weight" value="bold"/>
                     </attributes>
                   </object>
                   <packing>
@@ -1509,12 +1474,11 @@
                     <property name="can_focus">True</property>
                     <property name="round_digits">0</property>
                     <property name="digits">0</property>
-                    <property name="draw_value">False</property>
                   </object>
                   <packing>
                     <property name="top_attach">1</property>
                     <property name="bottom_attach">2</property>
-                    <property name="y_options">GTK_FILL</property>
+                    <property name="y_options"/>
                     <property name="y_padding">5</property>
                   </packing>
                 </child>
@@ -1524,7 +1488,6 @@
                     <property name="can_focus">True</property>
                     <property name="round_digits">0</property>
                     <property name="digits">0</property>
-                    <property name="draw_value">False</property>
                     <property name="override_type">1</property>
                   </object>
                   <packing>
@@ -1580,6 +1543,7 @@
                       <packing>
                         <property name="expand">True</property>
                         <property name="fill">True</property>
+                        <property name="padding">2</property>
                         <property name="position">0</property>
                       </packing>
                     </child>
@@ -1622,8 +1586,8 @@
                     <property name="bottom_attach">6</property>
                     <property name="x_options"/>
                     <property name="y_options"/>
-                    <property name="x_padding">2</property>
-                    <property name="y_padding">2</property>
+                    <property name="x_padding">5</property>
+                    <property name="y_padding">5</property>
                   </packing>
                 </child>
               </object>
@@ -1776,7 +1740,6 @@
                         <property name="z2_color">#ffff00000000</property>
                       </object>
                       <packing>
-                        <property name="y_options">GTK_SHRINK | GTK_FILL</property>
                         <property name="x_padding">50</property>
                         <property name="y_padding">3</property>
                       </packing>
@@ -1787,6 +1750,7 @@
                         <property name="can_focus">False</property>
                         <property name="bg_color">#808080808080</property>
                         <property name="max">1</property>
+                        <property name="min">-0.039999999105930328</property>
                         <property name="shiny">True</property>
                         <property name="show_limits">False</property>
                         <property name="target_color">#808000008080</property>
@@ -1800,7 +1764,6 @@
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="right_attach">2</property>
-                        <property name="y_options">GTK_SHRINK | GTK_FILL</property>
                         <property name="x_padding">50</property>
                         <property name="y_padding">5</property>
                       </packing>
@@ -1820,8 +1783,8 @@
                         <property name="right_attach">3</property>
                         <property name="x_options"/>
                         <property name="y_options"/>
-                        <property name="x_padding">20</property>
-                        <property name="y_padding">20</property>
+                        <property name="x_padding">30</property>
+                        <property name="y_padding">30</property>
                       </packing>
                     </child>
                     <child>
@@ -1859,7 +1822,6 @@
                     <property name="expand">True</property>
                     <property name="fill">True</property>
                     <property name="padding">2</property>
-                    <property name="pack_type">end</property>
                     <property name="position">1</property>
                   </packing>
                 </child>

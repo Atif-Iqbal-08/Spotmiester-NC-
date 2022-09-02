@@ -73,7 +73,7 @@ class e2(object):
         feed = self.s.feedrate
         self.builder.get_object("feedrate").set_text(str(5000*feed))
         rapid = self.s.rapidrate
-        self.builder.get_object("rapidrate").set_text(str(5000*rapid))
+        self.builder.get_object("rapidrate").set_text(str(int(5000*rapid)))
 
         return True  # must return True to keep running
 
@@ -529,12 +529,13 @@ class e2(object):
         if self.s.task_mode == self.cnc.MODE_AUTO:
             if pflag == False:
                 self.c.auto(self.cnc.AUTO_PAUSE)
+                self.update_statusbar(" !WARNING: System Pressure Low , Restoring pressure will resume program ")
                 #print("Pause python")
                 #self.response1 = self.messagedialog.run()
 
             elif pflag == True:
                 self.c.auto(self.cnc.AUTO_RESUME)
-                print("Resume from pythom", pflag)
+                #print("Resume from pythom", pflag)
 
         else:
             if pflag == False:
