@@ -1,31 +1,45 @@
 
-
-loadrt and2 count=6
-loadrt not count=2
-loadrt xor2 count=2
+#initializing ( note: Do not mess with this file as it will result in critical failure of the machine )
+loadrt and2 count=8
+loadrt not count=4
+loadrt xor2 count=1
 loadrt or2 count=1
+loadrt mult2 count=2
 loadrt time
 loadrt siggen num_chan=1
 loadrt oneshot names=oneshot.spot,oneshot.wait 
 addf and2.0 servo-thread
 addf not.0 servo-thread
 addf not.1 servo-thread
+addf not.2 servo-thread
+addf not.3 servo-thread
 addf or2.0 servo-thread
 addf and2.1 servo-thread
 addf xor2.0 servo-thread
-addf xor2.1 servo-thread
+addf and2.7 servo-thread
 addf and2.2 servo-thread
 addf and2.3 servo-thread
 addf and2.4 servo-thread
 addf and2.5 servo-thread
+addf and2.6 servo-thread
 addf time.0 servo-thread
+addf mult2.0 servo-thread
+addf mult2.1 servo-thread
 addf siggen.0.update servo-thread
 addf oneshot.spot servo-thread
 addf oneshot.wait servo-thread
 
-setp oneshot.spot.width 0.3 
-setp oneshot.wait.width 1 
 
+#spot pluse width and wait initialize
+newsig shot2 float
+linksp shot2 e1.spot_width
+linkps oneshot.spot.width shot2
+
+newsig shot3 float
+linksp shot3 e1.spot_wait
+setp oneshot.wait.width shot3
+
+#stack light 
 setp siggen.0.frequency 2
 net green-in1 <= halui.program.is-running => xor2.0.in0 time.0.start => e1.hal_led8
 net green-in2 <= halui.program.is-paused => and2.1.in1 time.0.pause
@@ -37,16 +51,14 @@ net green-on <= xor2.0.out => hm2_7i96.0.ssr.00.out-03
 net red1-on <= halui.estop.is-activated => or2.0.in0
 net redlight or2.0.out hm2_7i96.0.ssr.00.out-04
 
-
-
-
 #hall sensor
-net hall-up-left <= hm2_7i96.0.gpio.009.in => and2.2.in0
-linksp hall-up-left => e1.hal_led3
-net hall-up-right <= hm2_7i96.0.gpio.008.in => and2.2.in1
-linksp hall-up-right => e1.hal_led4
-net headdown <= and2.2.out => and2.4.in0 => not.1.in
+net hall-up-left <= hm2_7i96.0.gpio.009.in => and2.2.in0 not.2.in
 
+linksp hall-up-left => e1.hal_led3
+net hall-up-right <= hm2_7i96.0.gpio.008.in => and2.2.in1 not.1.in
+
+linksp hall-up-right => e1.hal_led4
+net headdown <= and2.2.out => and2.4.in0 
 
 
 
@@ -61,19 +73,21 @@ net load-cell-active <= and2.3.out => and2.4.in1
 #spot logic
 net spotbutton <= e1.hal_togglebutton1 => and2.5.in0
 linksp spotbutton => e1.hal_led7
+
 net sensordata <= and2.4.out => and2.5.in1
 
-net spotcheck <= and2.5.out => oneshot.wait.in => xor2.1.in0
-net spot-wait <= oneshot.wait.out => xor2.1.in1 
-net spot-on <= xor2.1.out => oneshot.spot.in
+net spotcheck <= and2.5.out => oneshot.wait.in => and2.7.in0
+net spot-wait <= oneshot.wait.out => not.3.in
+net spot-wait2 <= not.3.out => and2.7.in1
+net spot-on <= and2.7.out => oneshot.spot.in
 
-net spot-on1 <= oneshot.spot.out => hm2_7i96.0.ssr.00.out-02
-linksp spot-on1 => e1.hal_led6
+net spot-on1 <= oneshot.spot.out => hm2_7i96.0.ssr.00.out-02 e1.hal_led6
+#linksp spot-on1 => e1.hal_led6
 
 
 
 #pressure senor
-net pressure_sensor <= hm2_7i96.0.gpio.005.in_not =>not.0.in
+net pressure_sensor <= hm2_7i96.0.gpio.005.in_not => not.0.in
 linksp pressure_sensor => e1.hal_led5
 net pestop not.0.out  or2.0.in1
 
@@ -91,11 +105,20 @@ net cycle-minutes e1.time-minutes <= time.0.minutes
 net cycle-hours e1.time-hours <= time.0.hours
 
 #vbar
-net feedr halui.feed-override.value e1.hal_vbar1
-net rapidrr halui.rapid-override.value e1.hal_vbar2
+setp mult2.0.in1 5000
+setp mult2.1.in1 5000
+net feedover halui.feed-override.value mult2.0.in0 
+net feedr mult2.0.out e1.hal_hbar1
+net rapidover halui.rapid-override.value mult2.1.in0
+net rapidrr mult2.1.out e1.hal_hbar2
+net jogr e1.jog_speed e1.hal_hbar3
+
 
 #m66 code 
-net runcheck motion.digital-in-00 <= not.1.out
+net rightpch not.1.out and2.6.in0
+net leftpch not.2.out and2.6.in1
+
+net runcheck motion.digital-in-00 <= and2.6.out
 
 
 
